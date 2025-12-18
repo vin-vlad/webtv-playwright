@@ -92,9 +92,11 @@ export class SearchPage extends BasePage {
    * @returns {Promise<void>}
    */
   async waitForSearchResults() {
-    await this.page.waitForLoadState('networkidle', { timeout: TIMEOUTS.NETWORK_IDLE }).catch(() => {
-      // Silently catch network idle timeout - results may have loaded already
-    });
+    await this.page
+      .waitForLoadState('networkidle', { timeout: TIMEOUTS.NETWORK_IDLE })
+      .catch(() => {
+        // Silently catch network idle timeout - results may have loaded already
+      });
   }
 
   /**

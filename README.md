@@ -6,6 +6,7 @@ A JavaScript-based Playwright test automation framework designed for testing TV 
 
 - **Page Object Model (POM)**: Clean separation between test logic and page interactions
 - **Remote Control Simulation**: Navigate the TV interface using keyboard events (Arrow keys, Enter, Escape)
+- **NavigationBar Component**: Reusable navigation bar component with shared menu navigation logic
 - **Environment Configuration**: URL and settings managed via `.env` file
 - **HTML Reporting**: Built-in Playwright HTML reporter for detailed test results
 - **TV-Optimized Viewport**: Default 1920x1080 Full HD resolution
@@ -15,24 +16,29 @@ A JavaScript-based Playwright test automation framework designed for testing TV 
 ```
 webtv-playwright-automation/
 ├── config/
-│   └── env.js              # Environment configuration helper
+│   └── env.js                  # Environment configuration helper
 ├── src/
-│   ├── pages/              # Page Object Model classes
-│   │   ├── BasePage.js     # Base page with common methods
-│   │   ├── HomeScreenPage.js # Home screen page object
-│   │   └── index.js        # Page exports
-│   ├── components/         # Reusable component objects
-│   │   └── index.js        # Component exports
-│   └── utils/              # Utility functions
-│       ├── remoteControl.js # TV remote control simulator
-│       └── index.js        # Utility exports
-├── tests/                  # Test specifications
-│   ├── home-navigation.spec.js    # Home screen navigation tests
-│   └── navigation-edge-cases.spec.js # Edge case tests
-├── .env                    # Environment variables (not in git)
-├── .env.example            # Example environment file
-├── playwright.config.js    # Playwright configuration
-└── package.json            # Project dependencies and scripts
+│   ├── pages/                  # Page Object Model classes
+│   │   ├── BasePage.js         # Base page with common methods
+│   │   ├── HomeScreenPage.js   # Home screen page object
+│   │   ├── SearchPage.js       # Search page object
+│   │   └── index.js            # Page exports
+│   ├── components/             # Reusable component objects
+│   │   ├── NavigationBar.js    # Navigation bar component with menu navigation
+│   │   └── index.js            # Component exports
+│   └── utils/                  # Utility functions
+│       ├── remoteControl.js    # TV remote control simulator
+│       ├── navigationHelpers.js # Navigation utility functions
+│       ├── constants.js        # Timeout and limit constants
+│       └── index.js            # Utility exports
+├── tests/                      # Test specifications
+│   ├── channels-page.spec.js   # Channels page video playback tests
+│   ├── favourites-rail.spec.js # Favourite Apps rail management tests
+│   └── search-page.spec.js     # Search page category tests
+├── .env                        # Environment variables (not in git)
+├── .env.example                # Example environment file
+├── playwright.config.js        # Playwright configuration
+└── package.json                # Project dependencies and scripts
 ```
 
 ## Installation
@@ -147,49 +153,73 @@ The framework simulates TV remote control buttons using keyboard events.
 | Right         | ArrowRight   | `remote.moveRight()` |
 | OK/Select     | Enter        | `remote.select()`    |
 | Back          | Escape       | `remote.back()`      |
-| Play/Pause    | Space        | `remote.playPause()` |
-| Home          | Home         | `remote.home()`      |
 
 ### Usage Example
 
 ```javascript
 import { test } from '@playwright/test';
 import { HomeScreenPage } from '../src/pages/HomeScreenPage.js';
-import { RemoteControl } from '../src/utils/remoteControl.js';
 
 test('navigate to a tile and select it', async ({ page }) => {
   const homePage = new HomeScreenPage(page);
-  const remote = new RemoteControl(page);
 
   await homePage.goto();
 
   // Navigate right 3 times, then down 2 times
-  await remote.moveRight(3);
-  await remote.moveDown(2);
+  await homePage.remote.moveRight(3);
+  await homePage.remote.moveDown(2);
 
   // Select the focused item
-  await remote.select();
+  await homePage.remote.select();
 });
 ```
 
-### Advanced Navigation
+### Long Press Actions
 
 ```javascript
-// Navigate to a grid position (row 2, column 3)
-await remote.navigateToGridPosition(2, 3);
+// Hold the select button for a long press action (e.g., open edit mode)
+await homePage.remote.holdSelect(1500); // Hold for 1.5 seconds
+```
 
-// Execute a sequence of commands
-await remote.executeSequence([
-  { action: 'moveDown', times: 2 },
-  { action: 'moveRight', times: 3 },
-  { action: 'select' },
-]);
+## NavigationBar Component
 
-// Hold a key for continuous scroll
-await remote.holdKey('DOWN', 500);
+The `NavigationBar` component provides reusable locators and navigation methods for the main menu.
+
+### Menu Items
+
+The navigation bar includes locators for all main menu items:
+
+- `searchItem` - Search menu item
+- `homeItem` - Home menu item
+- `tvGuideItem` - TV Guide menu item
+- `channelsItem` - Channels menu item
+- `gamingItem` - Gaming menu item
+- `freeItem` - Free menu item
+- `appsItem` - Apps menu item
+
+### Shared Menu Navigation
+
+Use `navigateToMenuItemByName()` to navigate to any menu item from the home screen:
+
+```javascript
+import { NavigationBar } from '../src/components/NavigationBar.js';
+import { RemoteControl } from '../src/utils/remoteControl.js';
+
+// Navigate to the Apps menu item
+const nav = new NavigationBar(page);
+const remote = new RemoteControl(page);
+
+await nav.navigateToMenuItemByName(remote, 'Apps');
+await remote.select();
 ```
 
 ## Page Object Model
+
+### Available Page Objects
+
+- **BasePage**: Base class with common methods (`goto()`, `waitForPageLoad()`)
+- **HomeScreenPage**: Home screen with favourite apps rail, menu navigation, and app management
+- **SearchPage**: Search page with category selection and results grid
 
 ### Creating a New Page Object
 
@@ -198,16 +228,13 @@ await remote.holdKey('DOWN', 500);
 ```javascript
 import { BasePage } from './BasePage.js';
 import { RemoteControl } from '../utils/remoteControl.js';
+import { NavigationBar } from '../components/NavigationBar.js';
 
 export class MyNewPage extends BasePage {
   constructor(page) {
     super(page);
     this.remote = new RemoteControl(page);
-
-    this.selectors = {
-      mainContent: '[data-testid="main-content"]',
-      menuItem: '.menu-item',
-    };
+    this.nav = new NavigationBar(page);
   }
 
   async navigateToSection(sectionName) {
@@ -222,53 +249,38 @@ export class MyNewPage extends BasePage {
 export { MyNewPage } from './MyNewPage.js';
 ```
 
-### Page Object Best Practices
+## Navigation Helpers
 
-- Keep selectors in a `selectors` object for easy maintenance
-- Use meaningful method names that describe user actions
-- Integrate the `RemoteControl` utility for keyboard navigation
-- Add JSDoc comments for better IDE support
+The `navigationHelpers.js` module provides utility functions for navigation:
 
-## Customizing Selectors
+- **`normalise(value)`**: Normalize strings for comparison (lowercase, trim)
+- **`waitForFocusChange(page, getValueFn, previousValue, timeout)`**: Poll for focus changes
+- **`logNavigationFailure(context, target, lastFocused)`**: Log navigation failures
+- **`createTestIdFocusGetter(containerLocator)`**: Create a function to get focused element's data-testid
+- **`createTextFocusGetter(containerLocator)`**: Create a function to get focused element's text content
 
-The default selectors in `HomeScreenPage.js` use common patterns. Update them to match your application:
+## Constants
 
-```javascript
-this.selectors = {
-  // Update these to match your app's HTML structure
-  focusedItem: '[data-focused="true"], .focused, :focus',
-  tile: '[data-testid="tile"], .tile, .card',
-  contentRow: '[data-testid="content-row"], .row, .carousel',
-};
-```
+Centralized timeout and navigation limit values are defined in `constants.js`:
 
-## Troubleshooting
+### Timeouts
 
-### Tests fail to find elements
+| Constant           | Value    | Description                           |
+| ------------------ | -------- | ------------------------------------- |
+| `DEFAULT`          | 10000ms  | Default timeout for general operations |
+| `ELEMENT_VISIBILITY` | 15000ms | Timeout for element visibility checks |
+| `NETWORK_IDLE`     | 5000ms   | Timeout for network idle state        |
+| `LONG_PRESS_DURATION` | 1500ms | Duration for long press actions      |
+| `FOCUS_CHANGE`     | 500ms    | Timeout for detecting focus changes   |
+| `KEY_PRESS_DELAY`  | 100ms    | Delay between key presses             |
 
-- Verify your selectors match the actual HTML structure
-- Check that the app is running at the URL specified in `.env`
-- Use `test:headed` or `test:debug` mode to see what's happening
+### Navigation Limits
 
-### Navigation doesn't work
+| Constant              | Value | Description                              |
+| --------------------- | ----- | ---------------------------------------- |
+| `MAX_MENU_STEPS`      | 10    | Maximum steps for menu navigation        |
+| `MAX_RAIL_STEPS`      | 50    | Maximum steps for rail/list navigation   |
+| `MAX_APP_SEARCH_STEPS` | 100   | Maximum steps when searching for an app |
+| `MAX_DOWN_STEPS`      | 15    | Maximum down presses when looking for rail |
 
-- Ensure the app responds to keyboard events
-- Check that focusable elements are in the tab order
-- Verify the app doesn't require mouse click to activate keyboard nav
 
-### Reports not generating
-
-- Check the `playwright-report/` directory exists after running tests
-- Run `npm run test:report` to open the report
-- Ensure tests complete (even with failures) to generate reports
-
-## Contributing
-
-1. Create page objects for new screens in `src/pages/`
-2. Add component objects for reusable UI elements in `src/components/`
-3. Write tests in the `tests/` directory
-4. Update selectors to match the actual application structure
-
-## License
-
-ISC

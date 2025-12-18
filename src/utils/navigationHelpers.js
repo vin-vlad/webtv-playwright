@@ -25,7 +25,12 @@ export function normalise(value) {
  * @param {number} [timeout=TIMEOUTS.FOCUS_CHANGE] - Maximum time to wait for focus change
  * @returns {Promise<string|null>} The new focused value, or previousValue if timeout
  */
-export async function waitForFocusChange(page, getValueFn, previousValue, timeout = TIMEOUTS.FOCUS_CHANGE) {
+export async function waitForFocusChange(
+  page,
+  getValueFn,
+  previousValue,
+  timeout = TIMEOUTS.FOCUS_CHANGE
+) {
   const startTime = Date.now();
   while (Date.now() - startTime < timeout) {
     const currentValue = await getValueFn();

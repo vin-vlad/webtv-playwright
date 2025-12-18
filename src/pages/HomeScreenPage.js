@@ -174,7 +174,9 @@ export class HomeScreenPage extends BasePage {
     }
 
     if (!(await isVideoRailItemFocused())) {
-      console.warn(`[HomeScreenPage] Could not focus any item in Video rail while adding "${appName}"`);
+      console.warn(
+        `[HomeScreenPage] Could not focus any item in Video rail while adding "${appName}"`
+      );
       return false;
     }
 

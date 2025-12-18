@@ -96,7 +96,9 @@ export class NavigationBar {
   async navigateToMenuItemByName(remote, menuName, maxSteps = NAVIGATION_LIMITS.MAX_MENU_STEPS) {
     const target = this.menuItems[menuName];
     if (!target) {
-      throw new Error(`Unknown menu item: "${menuName}". Valid items: ${Object.keys(this.menuItems).join(', ')}`);
+      throw new Error(
+        `Unknown menu item: "${menuName}". Valid items: ${Object.keys(this.menuItems).join(', ')}`
+      );
     }
 
     // Move up to the menubar (focus starts on Home)
