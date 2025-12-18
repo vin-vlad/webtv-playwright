@@ -46,7 +46,7 @@ webtv-playwright-automation/
 1. Clone the repository and navigate to the project directory:
 
 ```bash
-cd webtv-playwright-automation
+cd webtv-playwright
 ```
 
 2. Install dependencies:
