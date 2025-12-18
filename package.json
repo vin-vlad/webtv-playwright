@@ -1,0 +1,41 @@
+{
+  "name": "webtv-playwright-automation",
+  "version": "1.0.0",
+  "description": "Playwright test automation framework for TV web interface with remote-control style navigation",
+  "type": "module",
+  "scripts": {
+    "test": "npx playwright test",
+    "test:ui": "npx playwright test --ui",
+    "test:headed": "npx playwright test --headed",
+    "test:debug": "npx playwright test --debug",
+    "test:chromium": "npx playwright test --project=chromium",
+    "test:firefox": "npx playwright test --project=firefox",
+    "test:webkit": "npx playwright test --project=webkit",
+    "test:report": "npx playwright show-report",
+    "test:trace": "npx playwright test --trace on",
+    "report:open": "npx playwright show-report playwright-report",
+    "clean": "rm -rf test-results playwright-report",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "keywords": [
+    "playwright",
+    "automation",
+    "testing",
+    "tv",
+    "webtv",
+    "pom"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.49.1",
+    "dotenv": "^16.4.5",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-playwright": "^2.4.0",
+    "prettier": "^3.7.4"
+  }
+}
